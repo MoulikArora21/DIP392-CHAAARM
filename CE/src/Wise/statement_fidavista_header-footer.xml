@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="WINDOWS-1257"?>
+<FIDAVISTA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.bankasoc.lv/fidavista/fidavista0101.xsd">
+<Header>
+<Timestamp>20221121111654403</Timestamp>
+<From>Swedbank, business.swedbank.lv, Customer support Tel. +371 67444444</From>
+</Header>
+<Statement>
+<Period>
+<StartDate>2023-01-01</StartDate>
+<EndDate>2025-12-31</EndDate>
+<PrepDate>2025-12-31</PrepDate>
+</Period>
+<BankSet>
+<Name>Wise Europe SA</Name>
+<LegalId></LegalId>
+<Address></Address>
+</BankSet>
+<ClientSet>
+<Name>SPIRIT ANIMAL SIA</Name>
+<LegalId>44103125796</LegalId>
+</ClientSet>
+<AccountSet>
+<AccNo>BE20967808077256</AccNo>
+<CcyStmt>
+<Ccy>EUR</Ccy>
+<OpenBal>0.00</OpenBal>
+<CloseBal>0.00</CloseBal>
+
+
+
+
+
+
+</CcyStmt>
+</AccountSet>
+</Statement>
+</FIDAVISTA>
