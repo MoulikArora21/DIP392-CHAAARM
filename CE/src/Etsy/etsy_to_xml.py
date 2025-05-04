@@ -2,10 +2,25 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import csv
 import datetime
+import pymupdf
+import re
+
+
+def read_pdf(pdf_doc):
+    doc = pymupdf.open("CE/src/Etsy/"+pdf_doc) # open a document
+    out = open("output.txt", "wb") # create a text output
+    for page in doc: # iterate the document pages
+        text = page.get_text()# get plain text (is in UTF-8)
+        x = re.search("Invoice: [0-9]*",text)
+        span = x.span()
+        invoice = text[span[0]+9:span[1]]
+    out.close()
+    return invoice
+
 
 
 def read_csv(file_name):
-    with open(file_name, "r") as f:
+    with open("CE/src/Etsy/"+file_name, "r") as f:
         reader = csv.reader(f)
         return list(reader)
 
@@ -97,8 +112,13 @@ def make_xml_list(entry_list):
             info_processing = dic_row["Title"][3:] + " / Deposit"
             pmtinfo.text = info_processing
         elif dic_row["Type"] == "Sale":
-            info_processing = dic_row["Title"]+ " / Sale" # oder different file ---
+            info_processing = dic_row["Title"]+ " / Sale" # order different file ---
             pmtinfo.text = info_processing
+        elif dic_row["Type"] == "Fee":
+            invoice = read_pdf("tax_statement_2025-1.pdf")
+            pmtinfo.text = invoice + " / " + dic_row["Info"] + " / " + dic_row["Title"] + " / Fee"
+        
+            
 
         cpartyset  = ET.SubElement(trxset,"CPartSet")
         accno_2  = ET.SubElement(cpartyset,"AccNo")
