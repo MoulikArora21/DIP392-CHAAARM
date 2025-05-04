@@ -4,47 +4,65 @@ import csv
 import datetime
 import pymupdf
 import re
+import pycountry
+
+eu_countries = {
+    "Austria", "Belgium", "Bulgaria", "Croatia", "Republic of Cyprus", "Czechia",
+    "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary",
+    "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta",
+    "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia",
+    "Spain", "Sweden"
+}
+
+def is_eu_country(country_name):
+    try:
+        country = pycountry.countries.lookup(country_name)
+        return country.name in eu_countries
+    except LookupError:
+        return False
+clients = [{"Name":"MARLE SIA","BankAcc":"LV81HABA0551052348489"}]
+selected_client = 0 
+
 
 
 def read_pdf(pdf_doc):
     doc = pymupdf.open("CE/src/Etsy/"+pdf_doc) # open a document
     out = open("output.txt", "wb") # create a text output
-    for page in doc: # iterate the document pages
-        text = page.get_text()# get plain text (is in UTF-8)
-        x = re.search("Invoice: [0-9]*",text)
-        span = x.span()
-        invoice = text[span[0]+9:span[1]]
-    out.close()
-    return invoice
+    for page in doc:
+            text = page.get_text()
+
+            invoice_match = re.search(r"Invoice:\s*(\d+)", text)
+            period_match = re.search(r"Invoice Period:\s*([0-9a-zA-Z, ]+)\s*-\s*([0-9a-zA-Z, ]+)", text)
+
+            if invoice_match and period_match:
+                invoice = invoice_match.group(1)
+                period_start_txt = period_match.group(1).strip()
+                period_end_txt = period_match.group(2).strip()
+
+                date_start = datetime.datetime.strptime(period_start_txt, "%d %B, %Y")
+                date_end = datetime.datetime.strptime(period_end_txt, "%d %B, %Y")
+
+                # period_start_date = date_start.strftime("%Y-%m-%d")
+                # period_end_date = date_end.strftime("%Y-%m-%d")
+                break 
+    return invoice, date_start, date_end
+
 
 
 
 def read_csv(file_name):
-    with open("CE/src/Etsy/"+file_name, "r") as f:
+    with open("CE/src/Etsy/"+file_name, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         return list(reader)
 
 
 def make_entry_list(data_list):
-    """Returns list of dicts with entries"""
     entry_list = []
-    headers = data_list[0]
+    headers = [h.strip('\ufeff') for h in data_list[0]]  # Remove BOM from header keys
     for row in data_list[1:]:
-        # make dict from headers and first row
         dict = {}
         for i in range(len(headers)):
             dict[headers[i]] = row[i]
-
-        # dict["turnover"] = abs(float(dict["Amount"]))
-        # result = dict["Description"]
-        # if dict["Payment Reference"]:
-        #     result += f" / {dict['Payment Reference']}"
-        # if dict["Exchange From"]:
-        #     result += f" / {dict['Exchange From']}-{dict['Exchange To']};{dict['Exchange Rate']}"
-        # dict["info"] = result
-        # if dict["Payee Name"] == "":
-        #     dict["Payee Name"] = dict["Merchant"]
-        # dict = get_type(dict)
         entry_list.append(dict)
     return entry_list
 
@@ -83,7 +101,7 @@ def make_xml_list(entry_list):
 
         regdate =  ET.SubElement(trxset,"RegDate")
         bookdate =  ET.SubElement(trxset,"BookDate")
-        date = datetime.datetime.strptime("January 30, 2025","%B %d, %Y")
+        date = datetime.datetime.strptime(dic_row["Date"],"%B %d, %Y")
         bookdate.text = date.strftime("%Y-%m-%d")
         valuedate =  ET.SubElement(trxset,"ValueDate")
         valuedate.text = date.strftime("%Y-%m-%d") 
@@ -93,7 +111,7 @@ def make_xml_list(entry_list):
         docno.text = "000"  #Ask
         cord  = ET.SubElement(trxset,"CorD")
 
-        if dic_row["Type"] == "SALE":
+        if dic_row["Type"] == "Sale":
             typename.text = "INB"
             typecode.text = "INP"
             cord.text = "C"
@@ -103,20 +121,43 @@ def make_xml_list(entry_list):
             cord.text = "D"
         accamt  = ET.SubElement(trxset,"AccAmt")
         if dic_row["Net"] == "--":
-            accamt.text = dic_row["Title"][3:8]
+            amount = re.search(r"([0-9.,]+)",dic_row["Title"])
+            accamt.text = amount.group(1)
+
+
         else:
-            accamt.text = dic_row["Net"][3:]
+            amount = re.search(r"([0-9.,]+)",dic_row["Net"])
+            accamt.text = amount.group(1)
 
         pmtinfo  = ET.SubElement(trxset,"PmtInfo")
         if dic_row["Type"] == "Deposit":
-            info_processing = dic_row["Title"][3:] + " / Deposit"
+            info_processing = dic_row["Title"] + " / Deposit"
             pmtinfo.text = info_processing
         elif dic_row["Type"] == "Sale":
-            info_processing = dic_row["Title"]+ " / Sale" # order different file ---
+            order_number_location = re.search("(\d+)",dic_row["Title"])
+            order_number = order_number_location.group(1)
+            order_list = make_entry_list(read_csv("EtsySoldOrders2025-1.csv"))
+            for orders in order_list:
+                if orders["Order ID"] == order_number:
+                    country = orders["Ship Country"]
+                    customer_name = orders["Full Name"]
+                    if is_eu_country(country):
+                        vat = "21% indiv."
+                    else:
+                        vat = "0% indiv."
+            info_processing = dic_row["Title"]+ " / Sale / "+vat # order different file ---
             pmtinfo.text = info_processing
         elif dic_row["Type"] == "Fee":
-            invoice = read_pdf("tax_statement_2025-1.pdf")
-            pmtinfo.text = invoice + " / " + dic_row["Info"] + " / " + dic_row["Title"] + " / Fee"
+            pdf_data = [read_pdf("tax_statement_2025-1.pdf")]
+
+            for pdf in pdf_data:
+                if pdf[1] <= date <= pdf[2]:
+                    pmtinfo.text = pdf[0] + " / " + dic_row["Info"] + " / " + dic_row["Title"] + " / Fee"
+                else:
+                    print("Etsy Rekins is missing! for ")
+        elif dic_row["Type"] == "Tax":
+            pmtinfo.text = "delete / " + dic_row["Info"] + " / " + dic_row["Title"] + " / Tax"
+            # how to know which listing belongs to which pdf
         
             
 
@@ -128,6 +169,17 @@ def make_xml_list(entry_list):
         bankcode  = ET.SubElement(cpartyset,"BankCode")
         ccy_2 = ET.SubElement(cpartyset,"Ccy")
         amt = ET.SubElement(cpartyset,"Amt")
+
+        if dic_row["Type"] == "Deposit":
+            accno_2.text = clients[selected_client]["BankAcc"]
+            name_2.text = clients[selected_client]["Name"]
+        elif dic_row["Type"] == "Fee" or dic_row["Type"] == "Tax" :
+            name_2.text = "Etsy Inc."
+        elif dic_row["Type"] == "Sale":
+            name_2.text = vat + " / " + customer_name
+
+        ccy_2.text = "EUR"
+        amt.text = amount.group(1)
 
 
 
@@ -147,20 +199,39 @@ print(entry_list)
 
 
 def prepare_list(file_root):
-    xml_str = ET.tostring(file_root).decode("utf-8")
+    xml_str = ET.tostring(file_root, encoding="unicode")
     xml_list = xml_str.split(">")
-    new_list =[]
-    for things in xml_list:
-        newthings = things + ">\n"
-        new_list.append(newthings)
-    new_list.pop(-1)
+    new_list = []
+    i = 0
+    while i < len(xml_list):
+        things = xml_list[i].strip()
+        if things == "<TrxSet":
+            # Start of TrxSet; collect all parts until </TrxSet
+            trx_line = things + ">"
+            i += 1
+            while i < len(xml_list) and xml_list[i].strip() != "</TrxSet":
+                trx_line += xml_list[i].strip() + ">"
+                i += 1
+            if i < len(xml_list):
+                trx_line += xml_list[i].strip() + ">"
+                new_list.append(trx_line + "\n")
+                i += 1
+        else:
+            new_list.append(things + ">\n")
+            i += 1
+    if new_list[-1].strip() == ">":
+        new_list.pop(-1)
     return new_list
 
 def prepare_xml(name,file_root):
-    with open(name,"w") as file:
+    with open(name,"w", encoding="utf-8") as file:
         for things in prepare_list(file_root):
-            file.writelines(things)
+            file.write(things)
     return
 
+print("€")  # should print the euro symbol
 
 prepare_xml("test2.xml",root)
+
+
+
