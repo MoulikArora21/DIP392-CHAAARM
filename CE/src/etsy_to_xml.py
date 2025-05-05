@@ -60,7 +60,7 @@ def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_
     root = ET.Element('FIDAVISTA')
     header = ET.SubElement(root, 'Header')
     timestamp = ET.SubElement(header, 'Timestamp')
-    timestamp.text = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    timestamp.text = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S").strip()
     from_who = ET.SubElement(header, 'From')
     from_who.text = "PayBaltic SIA"
     statement = ET.SubElement(root, 'Statement')
@@ -186,28 +186,34 @@ def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_
 
     return root
 
+import xml.etree.ElementTree as ET
+
 def prepare_list(file_root):
     xml_str = ET.tostring(file_root, encoding="unicode")
-    xml_list = xml_str.split(">")
+    xml_list = xml_str.split("><")
     new_list = []
     i = 0
     while i < len(xml_list):
-        things = xml_list[i].strip()
-        if things == "<TrxSet":
-            trx_line = things + ">"
+        current_segment = xml_list[i].strip()
+        if current_segment.startswith("TrxSet"):
+            trx_line = current_segment + "><"  # Start with the <TrxSet tag
             i += 1
-            while i < len(xml_list) and xml_list[i].strip() != "</TrxSet":
-                trx_line += xml_list[i].strip() + ">"
+            while i < len(xml_list) and not xml_list[i].strip().startswith("/TrxSet"):
+                trx_line += xml_list[i].strip() + "><"
                 i += 1
-            if i < len(xml_list):
-                trx_line += xml_list[i].strip() + ">"
-                new_list.append(trx_line + "\n")
+            if i < len(xml_list) and xml_list[i].strip().startswith("/TrxSet"):
+                trx_line += xml_list[i].strip() + ">"  # Include the </TrxSet>
+                new_list.append(trx_line + "\n<")
                 i += 1
         else:
-            new_list.append(things + ">\n")
+            # For non-<TrxSet> segments, append with >\n<, but ensure no duplicate ><
+            if current_segment.endswith(">"):
+                current_segment = current_segment.rstrip(">")
+            new_list.append(current_segment + ">\n<")
             i += 1
-    if new_list[-1].strip() == ">":
-        new_list.pop(-1)
+    # Clean up the last element if it ends with >\n<
+    if new_list and new_list[-1].strip().endswith(">\n<"):
+        new_list[-1] = new_list[-1].rstrip("\n<")
     return new_list
 
 def prepare_xml(name, file_root):
