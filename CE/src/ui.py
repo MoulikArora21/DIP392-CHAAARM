@@ -366,7 +366,7 @@ class MainWindow(QWidget):
         self.client_label.show()
         self.combo.show()
         self.edit_clients_btn.show()
-        self.drop_label.setText("Drag Transaction CSV files here or use 'Browse'")
+        self.drop_label.setText("Drag files here or use 'Browse'")
         self.splitter1.setSizes([300, 300, 300])
         self.update_ui()
 
@@ -398,7 +398,7 @@ class MainWindow(QWidget):
         self.topleft = QFrame(self)
         self.topleft.setFrameShape(QFrame.Shape.StyledPanel)
         left_layout = QVBoxLayout()
-        self.drop_label = DragDropLabel("Drag Transaction CSV files here or use 'Browse'")
+        self.drop_label = DragDropLabel("Drag files here or use 'Browse'")
         browse_btn = QPushButton("Browse Files")
         browse_btn.clicked.connect(lambda: self.browse_file(self.drop_label))
         clear_btn = QPushButton("Clear Files")
@@ -514,7 +514,7 @@ class MainWindow(QWidget):
 
     def update_ui(self):
         if self.mode == "Etsy":
-            self.topleft.setMaximumWidth(270)
+            self.topleft.setMaximumWidth(300)
         else:
             self.topleft.setMaximumWidth(16777215)  # Max int to allow full expansion
 
