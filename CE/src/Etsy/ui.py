@@ -4,7 +4,8 @@ import json
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QSplitter, QApplication, 
                             QComboBox, QLabel, QVBoxLayout, QPushButton, QFileDialog, 
-                            QGridLayout, QDialog, QListWidget, QLineEdit, QFormLayout, QSizePolicy)
+                            QGridLayout, QDialog, QListWidget, QLineEdit, QFormLayout, QSizePolicy, QMessageBox)
+import etsy_to_xml
 
 class ClientEditorDialog(QDialog):
     def __init__(self, clients, parent=None):
@@ -212,9 +213,13 @@ class MainWindow(QWidget):
         self.update_combo()
         edit_clients_btn = QPushButton("Edit Clients")
         edit_clients_btn.clicked.connect(self.edit_clients)
+
+        process_files_btn = QPushButton("PROCESS")
+        process_files_btn.clicked.connect(self.process_files)
         bottom_layout.addWidget(client_label, 1, 0)
         bottom_layout.addWidget(self.combo, 1, 1)
         bottom_layout.addWidget(edit_clients_btn, 1, 2)
+        bottom_layout.addWidget(process_files_btn, 2, 0,2,3)
         bottom.setLayout(bottom_layout)
 
         # Splitters
@@ -232,7 +237,7 @@ class MainWindow(QWidget):
         hbox.addWidget(splitter2)
         self.setLayout(hbox)
 
-        self.setGeometry(300, 100, 900, 700)
+        self.setGeometry(300, 100, 900, 600)
         self.setWindowTitle('QSplitter')
         self.show()
 
@@ -258,6 +263,31 @@ class MainWindow(QWidget):
         file_paths, _ = QFileDialog.getOpenFileNames(self, "Open Files")
         if file_paths:
             label.add_files(file_paths)
+
+    def process_files(self):
+            transaction_files = self.drop_label.files
+            sales_files = self.drop_label2.files
+            pdf_files = self.drop_label3.files
+
+            if not transaction_files or not sales_files:
+                QMessageBox.warning(self, "Missing Files", "Please provide at least one Transaction CSV and one Sales CSV file.")
+                return
+
+            if len(transaction_files) > 1 or len(sales_files) > 1 or len(pdf_files) > 1:
+                QMessageBox.warning(self, "Too Many Files", "Please provide only one file per category.")
+                return
+
+            transaction_file = transaction_files[0]
+            sales_file = sales_files[0]
+            pdf_file = pdf_files[0] if pdf_files else None
+            client = self.clients[self.selected_client]
+
+            try:
+                etsy_to_xml.process(transaction_file, sales_file, pdf_file, client)
+                QMessageBox.information(self, "Success", "XML file generated successfully as 'output.xml'.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to process files: {str(e)}")
+
 
 def main():
     app = QApplication(sys.argv)
