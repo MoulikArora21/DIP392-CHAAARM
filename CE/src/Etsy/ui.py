@@ -6,7 +6,7 @@ from PyQt6.QtGui import QIntValidator
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QSplitter, QApplication, 
                             QComboBox, QLabel, QVBoxLayout, QPushButton, QFileDialog, 
                             QGridLayout, QDialog, QListWidget, QLineEdit, QFormLayout, 
-                            QSizePolicy, QMessageBox, QMenuBar)
+                            QSizePolicy, QMessageBox, QMenuBar, QTextEdit)
 import etsy_to_xml
 import wise_to_xml
 
@@ -178,6 +178,115 @@ class ClientEditorDialog(QDialog):
     def get_clients(self):
         return self.clients
 
+class EditXMLDialog(QDialog):
+    def __init__(self, xml_file, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Edit XML: {os.path.basename(xml_file)}")
+        self.xml_file = xml_file
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+
+        # Text editor for XML content
+        self.text_edit = QTextEdit()
+        self.text_edit.setFontFamily("Courier New")  # Monospace font for XML
+        self.text_edit.setMinimumSize(600, 400)
+        self.text_edit.setUndoRedoEnabled(True)  # Enable undo/redo
+        try:
+            with open(self.xml_file, "r", encoding="utf-8") as f:
+                self.text_edit.setPlainText(f.read())
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load {os.path.basename(self.xml_file)}: {str(e)}")
+            self.reject()
+            return
+        layout.addWidget(self.text_edit)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        undo_btn = QPushButton("Undo")
+        undo_btn.clicked.connect(self.text_edit.undo)
+        redo_btn = QPushButton("Redo")
+        redo_btn.clicked.connect(self.text_edit.redo)
+        save_btn = QPushButton("Save")
+        save_btn.clicked.connect(self.save_xml)
+        save_as_btn = QPushButton("Save As")
+        save_as_btn.clicked.connect(self.save_as_xml)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        button_layout.addWidget(undo_btn)
+        button_layout.addWidget(redo_btn)
+        button_layout.addWidget(save_btn)
+        button_layout.addWidget(save_as_btn)
+        button_layout.addWidget(cancel_btn)
+        layout.addLayout(button_layout)
+
+        self.setLayout(layout)
+
+    def save_xml(self):
+        try:
+            with open(self.xml_file, "w", encoding="utf-8") as f:
+                f.write(self.text_edit.toPlainText())
+            self.accept()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save {os.path.basename(self.xml_file)}: {str(e)}")
+
+    def save_as_xml(self):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save XML As", "", "XML Files (*.xml)")
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(self.text_edit.toPlainText())
+                self.accept()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save {os.path.basename(file_path)}: {str(e)}")
+
+class SelectXMLDialog(QDialog):
+    def __init__(self, xml_files, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Select XML to Edit")
+        self.xml_files = xml_files
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+
+        # List of XML files
+        self.xml_list = QListWidget()
+        for xml_file in self.xml_files:
+            self.xml_list.addItem(os.path.basename(xml_file))
+        self.xml_list.doubleClicked.connect(self.edit_xml)
+        layout.addWidget(self.xml_list)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        edit_btn = QPushButton("Edit Selected")
+        edit_btn.clicked.connect(self.edit_xml)
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        button_layout.addWidget(edit_btn)
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+        # Enable Edit button only if an XML is selected
+        self.xml_list.itemSelectionChanged.connect(self.update_button_state)
+        self.edit_btn = edit_btn
+        self.update_button_state()
+
+        self.setLayout(layout)
+        self.setMinimumWidth(400)
+
+    def update_button_state(self):
+        has_selection = self.xml_list.currentRow() >= 0
+        self.edit_btn.setEnabled(has_selection)
+
+    def edit_xml(self):
+        selected = self.xml_list.currentRow()
+        if selected >= 0:
+            xml_file = self.xml_files[selected]
+            dialog = EditXMLDialog(xml_file, self)
+            dialog.exec()
+
 class DragDropLabel(QLabel):
     def __init__(self, text='Drag files here or use "Browse"'):
         super().__init__(text)
@@ -268,7 +377,7 @@ class MainWindow(QWidget):
         self.client_label.hide()
         self.combo.hide()
         self.edit_clients_btn.hide()
-        self.drop_label.setText("Drag Wise CSV file here or use 'Browse'")
+        self.drop_label.setText("Drag Wise CSV files here or use 'Browse'")
         self.drop_label.clear_files()
         self.splitter1.setSizes([900, 0, 0])
         self.update_ui()
@@ -396,14 +505,12 @@ class MainWindow(QWidget):
             self.update_combo()
 
     def browse_file(self, label):
-        if self.mode == "Wise":
-            file_path, _ = QFileDialog.getOpenFileName(self, "Open CSV File", "", "CSV Files (*.csv)")
-            if file_path:
-                label.add_files([file_path])
+        if label == self.drop_label3:
+            file_paths, _ = QFileDialog.getOpenFileNames(self, "Open PDF Files", "", "PDF Files (*.pdf)")
         else:
-            file_paths, _ = QFileDialog.getOpenFileNames(self, "Open Files")
-            if file_paths:
-                label.add_files(file_paths)
+            file_paths, _ = QFileDialog.getOpenFileNames(self, "Open CSV Files", "", "CSV Files (*.csv)")
+        if file_paths:
+            label.add_files(file_paths)
 
     def update_ui(self):
         if self.mode == "Etsy":
@@ -446,24 +553,24 @@ class MainWindow(QWidget):
             wise_files = self.drop_label.files
 
             if not wise_files:
-                QMessageBox.warning(self, "Missing Files", "Please provide one Wise CSV file.")
+                QMessageBox.warning(self, "Missing Files", "Please provide at least one Wise CSV file.")
                 return
 
-            if len(wise_files) > 1:
-                QMessageBox.warning(self, "Too Many Files", "Please provide exactly one Wise CSV file.")
-                return
-
-            wise_file = wise_files[0]
-            output_xml = os.path.splitext(wise_file)[0] + ".xml"
-            try:
-                wise_to_xml.process(wise_file, output_xml)
-                generated_files.append(output_xml)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to process {os.path.basename(wise_file)}: {str(e)}")
-                success = False
+            for wise_file in wise_files:
+                output_xml = os.path.splitext(wise_file)[0] + ".xml"
+                try:
+                    wise_to_xml.process(wise_file, output_xml)
+                    generated_files.append(output_xml)
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to process {os.path.basename(wise_file)}: {str(e)}")
+                    success = False
+                    break
 
         if success:
             QMessageBox.information(self, "Success", f"XML files generated: {', '.join(os.path.basename(f) for f in generated_files)}.")
+            # Show dialog to select and edit XML files
+            dialog = SelectXMLDialog(generated_files, self)
+            dialog.exec()
 
 def main():
     app = QApplication(sys.argv)
