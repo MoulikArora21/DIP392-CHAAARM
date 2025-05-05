@@ -53,8 +53,8 @@ def get_xml_list(entry_list):
         etree.SubElement(trx_set, "Type").text = "03" if row["type"] == "INB" else ""
         etree.SubElement(trx_set, "BookDate").text = datetime.datetime.strptime(row["Date"], '%d-%m-%Y').strftime('%Y-%m-%d')
         etree.SubElement(trx_set, "ValueDate").text = datetime.datetime.strptime(row["Date"], '%d-%m-%Y').strftime('%Y-%m-%d')
-        etree.SubElement(trx_set, "BankRef").text = str(row["TransferWise ID"])[:25]
-        etree.SubElement(trx_set, "DocNo").text = str(row["TransferWise ID"])[:25]
+        etree.SubElement(trx_set, "BankRef").text = str(row["TransferWise ID"])
+        etree.SubElement(trx_set, "DocNo").text = str(row["TransferWise ID"])
         etree.SubElement(trx_set, "CorD").text = row["CorD"]
         etree.SubElement(trx_set, "AccAmt").text = str(abs(float(row["Amount"])))
         etree.SubElement(trx_set, "PmtInfo").text = row["info"]
