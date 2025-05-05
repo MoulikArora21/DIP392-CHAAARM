@@ -20,38 +20,30 @@ def is_eu_country(country_name):
         return country.name in eu_countries
     except LookupError:
         return False
-clients = [{"Name":"MARLE SIA","BankAcc":"LV81HABA0551052348489"}]
-selected_client = 0 
 
 
-
-def read_pdf(pdf_doc):
-    doc = pymupdf.open("CE/src/Etsy/"+pdf_doc) # open a document
-    out = open("output.txt", "wb") # create a text output
+def read_pdf(pdf_path):
+    doc = pymupdf.open(pdf_path)
     for page in doc:
-            text = page.get_text()
-
-            invoice_match = re.search(r"Invoice:\s*(\d+)", text)
-            period_match = re.search(r"Invoice Period:\s*([0-9a-zA-Z, ]+)\s*-\s*([0-9a-zA-Z, ]+)", text)
-
-            if invoice_match and period_match:
-                invoice = invoice_match.group(1)
-                period_start_txt = period_match.group(1).strip()
-                period_end_txt = period_match.group(2).strip()
-
-                date_start = datetime.datetime.strptime(period_start_txt, "%d %B, %Y")
-                date_end = datetime.datetime.strptime(period_end_txt, "%d %B, %Y")
-
-                # period_start_date = date_start.strftime("%Y-%m-%d")
-                # period_end_date = date_end.strftime("%Y-%m-%d")
-                break 
-    return invoice, date_start, date_end
+        text = page.get_text()
+        invoice_match = re.search(r"Invoice:\s*(\d+)", text)
+        period_match = re.search(r"Invoice Period:\s*([0-9a-zA-Z, ]+)\s*-\s*([0-9a-zA-Z, ]+)", text)
+        if invoice_match and period_match:
+            invoice = invoice_match.group(1)
+            period_start_txt = period_match.group(1).strip()
+            period_end_txt = period_match.group(2).strip()
+            date_start = datetime.datetime.strptime(period_start_txt, "%d %B, %Y")
+            date_end = datetime.datetime.strptime(period_end_txt, "%d %B, %Y")
+            doc.close()
+            return invoice, date_start, date_end
+    doc.close()
+    raise ValueError("Could not extract invoice or period from PDF")
 
 
 
 
-def read_csv(file_name):
-    with open("CE/src/Etsy/"+file_name, "r", encoding="utf-8") as f:
+def read_csv(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         return list(reader)
 
@@ -65,51 +57,61 @@ def make_entry_list(data_list):
             dict[headers[i]] = row[i]
         entry_list.append(dict)
     return entry_list
+def make_xml_list(entry_list, sales_file, pdf_file, client):
+    root = ET.Element('FIDAVISTA')
+    header = ET.SubElement(root, 'Header')
+    timestamp = ET.SubElement(header, 'Timestamp')
+    timestamp.text = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    from_who = ET.SubElement(header, 'From')
+    from_who.text = "Etsy Processor"
+    statement = ET.SubElement(root, 'Statement')
+    period = ET.SubElement(statement, 'Period')
+    startdate = ET.SubElement(period, 'StartDate')
+    enddate = ET.SubElement(period, 'EndDate')
+    prepdate = ET.SubElement(period, 'PrepDate')
+    prepdate.text = datetime.datetime.now().strftime("%Y-%m-%d")
+    bankset = ET.SubElement(statement, 'BankSet')
+    name = ET.SubElement(bankset, 'Name')
+    name.text = client["Name"]
+    legalid = ET.SubElement(bankset, 'LegalId')
+    address = ET.SubElement(bankset, 'Address')
+    clientset = ET.SubElement(statement, 'ClientSet')
+    client_name = ET.SubElement(clientset, 'Name')
+    client_name.text = client["Name"]
+    legalid = ET.SubElement(clientset, 'LegalId')
+    accountset = ET.SubElement(statement, 'AccountSet')
+    accno = ET.SubElement(accountset, 'AccNo')
+    accno.text = client["BankAcc"]
+    ccystmt = ET.SubElement(accountset, 'CcyStmt')
+    ccy = ET.SubElement(ccystmt, 'Ccy')
+    ccy.text = "EUR"
+    openbal = ET.SubElement(ccystmt, 'OpenBal')
+    openbal.text = "0.00"
+    closebal = ET.SubElement(ccystmt, 'CloseBal')
+    closebal.text = "0.00"
 
-root = ET.Element('FIDAVISTA')
-header = ET.SubElement(root, 'Header')
-timestamp = ET.SubElement(header, 'Timestamp')
-from_who = ET.SubElement(header, 'From')
-statement = ET.SubElement(root, 'Statement')
-period = ET.SubElement(statement, 'Period')
-startdate = ET.SubElement(period, 'StartDate')
-enddate = ET.SubElement(period, 'EndDate')
-prepdate = ET.SubElement(period, 'PrepDate')
-bankset = ET.SubElement(statement, 'BankSet')
-name = ET.SubElement(bankset, 'Name')
-legalid = ET.SubElement(bankset, 'LegalId')
-address = ET.SubElement(bankset, 'Address')
-clientset = ET.SubElement(statement, 'ClientSet')
-name = ET.SubElement(clientset, 'Name')
-legalid = ET.SubElement(clientset, 'LegalId')
-accountset = ET.SubElement(statement, 'AccountSet')
-accno = ET.SubElement(accountset, 'AccNo')
-ccystmt = ET.SubElement(accountset, 'CcyStmt')
-ccy = ET.SubElement(ccystmt, 'Ccy')
-openbal = ET.SubElement(ccystmt, 'OpenBal')
-closebal = ET.SubElement(ccystmt, 'CloseBal')
+    # Read sales data
+    sales_data = read_csv(sales_file) if sales_file else []
+    sales_entries = make_entry_list(sales_data) if sales_data else []
 
-def make_xml_list(entry_list):
-    xml_list = []
+    # Read PDF data if provided
+    pdf_data = read_pdf(pdf_file) if pdf_file else None
+
     for dic_row in entry_list:
-
-        trxset = ET.SubElement(ccystmt,"TrxSet")
-        typecode = ET.SubElement(trxset,"TypeCode")
-        typename = ET.SubElement(trxset,"TypeName")
-        # actual_type = ET.SubElement(trxset,"Type") DOUBT
-
-
-        regdate =  ET.SubElement(trxset,"RegDate")
-        bookdate =  ET.SubElement(trxset,"BookDate")
-        date = datetime.datetime.strptime(dic_row["Date"],"%B %d, %Y")
+        date = datetime.datetime.strptime(dic_row["Date"], "%B %d, %Y")
+        trxset = ET.SubElement(ccystmt, "TrxSet")
+        typecode = ET.SubElement(trxset, "TypeCode")
+        typename = ET.SubElement(trxset, "TypeName")
+        regdate = ET.SubElement(trxset, "RegDate")
+        bookdate = ET.SubElement(trxset, "BookDate")
         bookdate.text = date.strftime("%Y-%m-%d")
-        valuedate =  ET.SubElement(trxset,"ValueDate")
-        valuedate.text = date.strftime("%Y-%m-%d") 
-        bankref = ET.SubElement(trxset,"BankRef")
-        bankref.text = "000"  #Ask
-        docno = ET.SubElement(trxset,"DocNo")
-        docno.text = "000"  #Ask
-        cord  = ET.SubElement(trxset,"CorD")
+        valuedate = ET.SubElement(trxset, "ValueDate")
+        valuedate.text = date.strftime("%Y-%m-%d")
+        bankref = ET.SubElement(trxset, "BankRef")
+        bankref.text = "000"
+        docno = ET.SubElement(trxset, "DocNo")
+        docno.text = "000"
+        cord = ET.SubElement(trxset, "CorD")
 
         if dic_row["Type"] == "Sale":
             typename.text = "INB"
@@ -119,82 +121,61 @@ def make_xml_list(entry_list):
             typename.text = "PRV"
             typecode.text = "OUTP"
             cord.text = "D"
-        accamt  = ET.SubElement(trxset,"AccAmt")
+
+        accamt = ET.SubElement(trxset, "AccAmt")
         if dic_row["Net"] == "--":
-            amount = re.search(r"([0-9.,]+)",dic_row["Title"])
-            accamt.text = amount.group(1)
-
-
+            amount = re.search(r"([0-9.,]+)", dic_row["Title"])
+            accamt.text = amount.group(1) if amount else "0.00"
         else:
-            amount = re.search(r"([0-9.,]+)",dic_row["Net"])
-            accamt.text = amount.group(1)
+            amount = re.search(r"([0-9.,]+)", dic_row["Net"])
+            accamt.text = amount.group(1) if amount else "0.00"
 
-        pmtinfo  = ET.SubElement(trxset,"PmtInfo")
+        pmtinfo = ET.SubElement(trxset, "PmtInfo")
         if dic_row["Type"] == "Deposit":
             info_processing = dic_row["Title"] + " / Deposit"
             pmtinfo.text = info_processing
         elif dic_row["Type"] == "Sale":
-            order_number_location = re.search("(\d+)",dic_row["Title"])
-            order_number = order_number_location.group(1)
-            order_list = make_entry_list(read_csv("EtsySoldOrders2025-1.csv"))
-            for orders in order_list:
-                if orders["Order ID"] == order_number:
-                    country = orders["Ship Country"]
-                    customer_name = orders["Full Name"]
-                    if is_eu_country(country):
-                        vat = "21% indiv."
-                    else:
-                        vat = "0% indiv."
-            info_processing = dic_row["Title"]+ " / Sale / "+vat # order different file ---
+            order_number_location = re.search(r"(\d+)", dic_row["Title"])
+            order_number = order_number_location.group(1) if order_number_location else ""
+            customer_name = "Unknown"
+            vat = "0% indiv."
+            for order in sales_entries:
+                if order["Order ID"] == order_number:
+                    country = order["Ship Country"]
+                    customer_name = order["Full Name"]
+                    vat = "21% indiv." if is_eu_country(country) else "0% indiv."
+                    break
+            info_processing = f"{dic_row['Title']} / Sale / {vat}"
             pmtinfo.text = info_processing
-        elif dic_row["Type"] == "Fee":
-            pdf_data = [read_pdf("tax_statement_2025-1.pdf")]
-
-            for pdf in pdf_data:
-                if pdf[1] <= date <= pdf[2]:
-                    pmtinfo.text = pdf[0] + " / " + dic_row["Info"] + " / " + dic_row["Title"] + " / Fee"
-                else:
-                    print("Etsy Rekins is missing! for ")
+        elif dic_row["Type"] == "Fee" and pdf_data:
+            if pdf_data[1] <= date <= pdf_data[2]:
+                pmtinfo.text = f"{pdf_data[0]} / {dic_row['Info']} / {dic_row['Title']} / Fee"
+            else:
+                pmtinfo.text = f"No matching PDF for {dic_row['Title']} / Fee"
         elif dic_row["Type"] == "Tax":
-            pmtinfo.text = "delete / " + dic_row["Info"] + " / " + dic_row["Title"] + " / Tax"
-            # how to know which listing belongs to which pdf
-        
-            
+            pmtinfo.text = f"delete / {dic_row['Info']} / {dic_row['Title']} / Tax"
 
-        cpartyset  = ET.SubElement(trxset,"CPartSet")
-        accno_2  = ET.SubElement(cpartyset,"AccNo")
-        accholder_2  = ET.SubElement(cpartyset,"AccHolder")
-        name_2  = ET.SubElement(accholder_2,"Name")
-        legalid_2  = ET.SubElement(accholder_2,"LegalId")
-        bankcode  = ET.SubElement(cpartyset,"BankCode")
-        ccy_2 = ET.SubElement(cpartyset,"Ccy")
-        amt = ET.SubElement(cpartyset,"Amt")
+        cpartyset = ET.SubElement(trxset, "CPartSet")
+        accno_2 = ET.SubElement(cpartyset, "AccNo")
+        accholder_2 = ET.SubElement(cpartyset, "AccHolder")
+        name_2 = ET.SubElement(accholder_2, "Name")
+        legalid_2 = ET.SubElement(accholder_2, "LegalId")
+        bankcode = ET.SubElement(cpartyset, "BankCode")
+        ccy_2 = ET.SubElement(cpartyset, "Ccy")
+        amt = ET.SubElement(cpartyset, "Amt")
 
         if dic_row["Type"] == "Deposit":
-            accno_2.text = clients[selected_client]["BankAcc"]
-            name_2.text = clients[selected_client]["Name"]
-        elif dic_row["Type"] == "Fee" or dic_row["Type"] == "Tax" :
+            accno_2.text = client["BankAcc"]
+            name_2.text = client["Name"]
+        elif dic_row["Type"] == "Fee" or dic_row["Type"] == "Tax":
             name_2.text = "Etsy Inc."
         elif dic_row["Type"] == "Sale":
-            name_2.text = vat + " / " + customer_name
+            name_2.text = f"{vat} / {customer_name}"
 
         ccy_2.text = "EUR"
-        amt.text = amount.group(1)
+        amt.text = accamt.text
 
-
-
-
-
-data_list = read_csv("testing123.csv")
-entry_list = make_entry_list(data_list)
-make_xml = make_xml_list(entry_list)
-
-
-print(entry_list)
-
-
-
-
+    return root
 
 
 
@@ -229,9 +210,11 @@ def prepare_xml(name,file_root):
             file.write(things)
     return
 
-print("€")  # should print the euro symbol
-
-prepare_xml("test2.xml",root)
+def process(transaction_file, sales_file, pdf_file, client):
+    data_list = read_csv(transaction_file)
+    entry_list = make_entry_list(data_list)
+    xml_root = make_xml_list(entry_list, sales_file, pdf_file, client)
+    prepare_xml("output.xml", xml_root)
 
 
 
