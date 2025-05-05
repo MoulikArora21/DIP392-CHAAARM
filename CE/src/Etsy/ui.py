@@ -4,7 +4,7 @@ import json
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QSplitter, QApplication, 
                             QComboBox, QLabel, QVBoxLayout, QPushButton, QFileDialog, 
-                            QGridLayout, QDialog, QListWidget, QLineEdit, QFormLayout)
+                            QGridLayout, QDialog, QListWidget, QLineEdit, QFormLayout, QSizePolicy)
 
 class ClientEditorDialog(QDialog):
     def __init__(self, clients, parent=None):
@@ -78,6 +78,8 @@ class DragDropLabel(QLabel):
         self.setStyleSheet("border: 2px dashed #aaa;")
         self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.setWordWrap(True)
+        self.setMinimumHeight(400)  # Ensure sufficient height for file display
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.files = []  # List to store dropped file paths
 
     def dragEnterEvent(self, event):
@@ -143,7 +145,6 @@ class MainWindow(QWidget):
     def EtsyUI(self):
         hbox = QHBoxLayout(self)
 
-        # Left Frame
         topleft = QFrame(self)
         topleft.setFrameShape(QFrame.Shape.StyledPanel)
         left_layout = QVBoxLayout()
@@ -153,9 +154,14 @@ class MainWindow(QWidget):
         browse_btn.clicked.connect(lambda: self.browse_file(self.drop_label))
         clear_btn = QPushButton("Clear Files")
         clear_btn.clicked.connect(self.drop_label.clear_files)
+        label1 = QLabel("Transactions Statement CSV Files:")
+        label1.setMaximumHeight(20)  # Limit label height
+        label1.setStyleSheet("font-size: 12px;")  # Smaller font for label
+        left_layout.addWidget(label1)
         left_layout.addWidget(self.drop_label)
         left_layout.addWidget(browse_btn)
         left_layout.addWidget(clear_btn)
+        left_layout.addStretch()  # Push content up, prioritize DragDropLabel
         topleft.setLayout(left_layout)
 
         # Middle Frame
@@ -167,9 +173,14 @@ class MainWindow(QWidget):
         browse_btn2.clicked.connect(lambda: self.browse_file(self.drop_label2))
         clear_btn2 = QPushButton("Clear Files")
         clear_btn2.clicked.connect(self.drop_label2.clear_files)
+        label2 = QLabel("Orders CSV Files:")
+        label2.setMaximumHeight(20)  # Limit label height
+        label2.setStyleSheet("font-size: 12px;")  # Smaller font for label
+        middle_layout.addWidget(label2)
         middle_layout.addWidget(self.drop_label2)
         middle_layout.addWidget(browse_btn2)
         middle_layout.addWidget(clear_btn2)
+        middle_layout.addStretch()  # Push content up, prioritize DragDropLabel
         topmiddle.setLayout(middle_layout)
 
         # Right Frame
@@ -181,9 +192,14 @@ class MainWindow(QWidget):
         browse_btn3.clicked.connect(lambda: self.browse_file(self.drop_label3))
         clear_btn3 = QPushButton("Clear Files")
         clear_btn3.clicked.connect(self.drop_label3.clear_files)
+        label3 = QLabel("Etsy Invoice PDF Files:")
+        label3.setMaximumHeight(20)  # Limit label height
+        label3.setStyleSheet("font-size: 12px;")  # Smaller font for label
+        right_layout.addWidget(label3)
         right_layout.addWidget(self.drop_label3)
         right_layout.addWidget(browse_btn3)
         right_layout.addWidget(clear_btn3)
+        right_layout.addStretch()  # Push content up, prioritize DragDropLabel
         topright.setLayout(right_layout)
 
         # Bottom Frame
@@ -206,6 +222,7 @@ class MainWindow(QWidget):
         splitter1.addWidget(topleft)
         splitter1.addWidget(topmiddle)
         splitter1.addWidget(topright)
+        splitter1.setSizes([300, 300, 300]) 
 
         splitter2 = QSplitter(Qt.Orientation.Vertical)
         splitter2.addWidget(splitter1)
