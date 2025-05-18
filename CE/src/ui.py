@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QSplitter, QApplicati
                             QSizePolicy, QMessageBox, QMenuBar, QTextEdit)
 import etsy_to_xml
 import wise_to_xml
+import revolut_to_xml
 
 class AddClientDialog(QDialog):
     def __init__(self, parent=None):
@@ -22,10 +23,12 @@ class AddClientDialog(QDialog):
         
         self.name_input = QLineEdit()
         self.bank_acc_input = QLineEdit()
+        self.legal_id_input = QLineEdit()
         self.total_transactions_input = QLineEdit()
         self.total_transactions_input.setValidator(QIntValidator(0, 999999))
         form_layout.addRow("Name:", self.name_input)
         form_layout.addRow("Bank Account:", self.bank_acc_input)
+        form_layout.addRow("Legal ID:", self.legal_id_input)
         form_layout.addRow("Total Transactions:", self.total_transactions_input)
         layout.addLayout(form_layout)
 
@@ -44,9 +47,15 @@ class AddClientDialog(QDialog):
     def get_client_data(self):
         name = self.name_input.text().strip()
         bank_acc = self.bank_acc_input.text().strip()
+        legal_id = self.legal_id_input.text().strip()
         total_transactions = self.total_transactions_input.text().strip()
         total_transactions = int(total_transactions) if total_transactions else 0
-        return {"Name": name, "BankAcc": bank_acc, "total_transactions": total_transactions}
+        return {
+            "Name": name,
+            "BankAcc": bank_acc,
+            "LegalId": legal_id,
+            "total_transactions": total_transactions
+        }
 
 class EditClientDialog(QDialog):
     def __init__(self, client, parent=None):
@@ -61,10 +70,12 @@ class EditClientDialog(QDialog):
         
         self.name_input = QLineEdit(self.client["Name"])
         self.bank_acc_input = QLineEdit(self.client["BankAcc"])
+        self.legal_id_input = QLineEdit(self.client.get("LegalId", ""))
         self.total_transactions_input = QLineEdit(str(self.client["total_transactions"]))
         self.total_transactions_input.setValidator(QIntValidator(0, 999999))
         form_layout.addRow("Name:", self.name_input)
         form_layout.addRow("Bank Account:", self.bank_acc_input)
+        form_layout.addRow("Legal ID:", self.legal_id_input)
         form_layout.addRow("Total Transactions:", self.total_transactions_input)
         layout.addLayout(form_layout)
 
@@ -83,9 +94,15 @@ class EditClientDialog(QDialog):
     def get_client_data(self):
         name = self.name_input.text().strip()
         bank_acc = self.bank_acc_input.text().strip()
+        legal_id = self.legal_id_input.text().strip()
         total_transactions = self.total_transactions_input.text().strip()
         total_transactions = int(total_transactions) if total_transactions else 0
-        return {"Name": name, "BankAcc": bank_acc, "total_transactions": total_transactions}
+        return {
+            "Name": name,
+            "BankAcc": bank_acc,
+            "LegalId": legal_id,
+            "total_transactions": total_transactions
+        }
 
 class ClientEditorDialog(QDialog):
     def __init__(self, clients, parent=None):
@@ -123,12 +140,16 @@ class ClientEditorDialog(QDialog):
         self.update_button_states()
 
         self.setLayout(layout)
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(600)
 
     def update_client_list(self):
         self.client_list.clear()
-        for client in self.clients:
-            self.client_list.addItem(f"{client['Name']} ({client['BankAcc']}, Transactions: {client['total_transactions']})")
+        for i, client in enumerate(self.clients):
+            legal_id = client.get("LegalId", "")
+            legal_id_display = f", LegalId: {legal_id}" if legal_id else ""
+            self.client_list.addItem(
+                f"Client {i+1}: {client['Name']} ({client['BankAcc']}{legal_id_display}, Transactions: {client['total_transactions']})"
+            )
 
     def update_button_states(self):
         has_selection = self.client_list.currentRow() >= 0
@@ -188,11 +209,10 @@ class EditXMLDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        # Text editor for XML content
         self.text_edit = QTextEdit()
-        self.text_edit.setFontFamily("Courier New")  # Monospace font for XML
+        self.text_edit.setFontFamily("Courier New")
         self.text_edit.setMinimumSize(600, 400)
-        self.text_edit.setUndoRedoEnabled(True)  # Enable undo/redo
+        self.text_edit.setUndoRedoEnabled(True)
         try:
             with open(self.xml_file, "r", encoding="utf-8") as f:
                 self.text_edit.setPlainText(f.read())
@@ -202,7 +222,6 @@ class EditXMLDialog(QDialog):
             return
         layout.addWidget(self.text_edit)
 
-        # Buttons
         button_layout = QHBoxLayout()
         undo_btn = QPushButton("Undo")
         undo_btn.clicked.connect(self.text_edit.undo)
@@ -251,14 +270,12 @@ class SelectXMLDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        # List of XML files
         self.xml_list = QListWidget()
         for xml_file in self.xml_files:
             self.xml_list.addItem(os.path.basename(xml_file))
         self.xml_list.doubleClicked.connect(self.edit_xml)
         layout.addWidget(self.xml_list)
 
-        # Buttons
         button_layout = QHBoxLayout()
         edit_btn = QPushButton("Edit Selected")
         edit_btn.clicked.connect(self.edit_xml)
@@ -268,7 +285,6 @@ class SelectXMLDialog(QDialog):
         button_layout.addWidget(close_btn)
         layout.addLayout(button_layout)
 
-        # Enable Edit button only if an XML is selected
         self.xml_list.itemSelectionChanged.connect(self.update_button_state)
         self.edit_btn = edit_btn
         self.update_button_state()
@@ -350,9 +366,11 @@ class MainWindow(QWidget):
                         raise ValueError("Invalid client data")
                     if "total_transactions" not in c:
                         c["total_transactions"] = 0
+                    if "LegalId" not in c:
+                        c["LegalId"] = ""
                 return clients
         except (FileNotFoundError, json.JSONDecodeError, ValueError):
-            return [{"Name": "MARLE SIA", "BankAcc": "LV81HABA0551052348489", "total_transactions": 0}]
+            return [{"Name": "MARLE SIA", "BankAcc": "LV81HABA0551052348489", "LegalId": "", "total_transactions": 0}]
 
     def save_clients(self):
         with open("clients.json", "w") as f:
@@ -374,13 +392,29 @@ class MainWindow(QWidget):
         self.mode = "Wise"
         self.topmiddle.hide()
         self.topright.hide()
-        self.client_label.hide()
-        self.combo.hide()
-        self.edit_clients_btn.hide()
+        self.client_label.show()
+        self.combo.show()
+        self.edit_clients_btn.show()
         self.drop_label.setText("Drag Wise CSV files here or use 'Browse'")
         self.drop_label.clear_files()
         self.splitter1.setSizes([900, 0, 0])
         self.update_ui()
+
+    def set_revolut_mode(self):
+        self.mode = "Revolut"
+        self.topmiddle.hide()
+        self.topright.hide()
+        self.client_label.show()
+        self.combo.show()
+        self.edit_clients_btn.show()
+        self.drop_label.setText("Drag Revolut CSV files here or use 'Browse'")
+        self.drop_label.clear_files()
+        self.splitter1.setSizes([900, 0, 0])
+        self.update_ui()
+
+    def update_selected_client(self, index):
+        if index >= 0 and index < len(self.clients):
+            self.selected_client = index
 
     def EtsyUI(self):
         self.main_layout = QVBoxLayout(self)
@@ -389,8 +423,10 @@ class MainWindow(QWidget):
         mode_menu = menubar.addMenu("Mode")
         etsy_action = mode_menu.addAction("Etsy Processing")
         wise_action = mode_menu.addAction("Wise Processing")
+        revolut_action = mode_menu.addAction("Revolut Processing")
         etsy_action.triggered.connect(self.set_etsy_mode)
         wise_action.triggered.connect(self.set_wise_mode)
+        revolut_action.triggered.connect(self.set_revolut_mode)
         self.main_layout.addWidget(menubar)
 
         hbox = QHBoxLayout()
@@ -455,6 +491,7 @@ class MainWindow(QWidget):
         bottom_layout.setSpacing(10)
         self.client_label = QLabel('Select Client:')
         self.combo = QComboBox(self)
+        self.combo.currentIndexChanged.connect(self.update_selected_client)
         self.update_combo()
         self.edit_clients_btn = QPushButton("Edit Clients")
         self.edit_clients_btn.clicked.connect(self.edit_clients)
@@ -487,14 +524,16 @@ class MainWindow(QWidget):
         self.show()
 
     def update_combo(self):
+        self.combo.blockSignals(True)
         self.combo.clear()
-        for client in self.clients:
-            self.combo.addItem(client["Name"])
-        if self.clients and self.selected_client < len(self.clients):
+        for i, client in enumerate(self.clients):
+            self.combo.addItem(f"Client {i+1}: {client['Name']}")
+        if self.clients:
             self.combo.setCurrentIndex(self.selected_client)
         else:
             self.selected_client = 0
             self.combo.setCurrentIndex(0)
+        self.combo.blockSignals(False)
 
     def edit_clients(self):
         dialog = ClientEditorDialog(self.clients, self)
@@ -516,7 +555,7 @@ class MainWindow(QWidget):
         if self.mode == "Etsy":
             self.topleft.setMaximumWidth(300)
         else:
-            self.topleft.setMaximumWidth(16777215)  # Max int to allow full expansion
+            self.topleft.setMaximumWidth(16777215)
 
     def process_files(self):
         generated_files = []
@@ -546,29 +585,45 @@ class MainWindow(QWidget):
                     success = False
                     break
 
-            if success:
-                self.save_clients()
-
-        else:  # Wise mode
+        elif self.mode == "Wise":
             wise_files = self.drop_label.files
 
             if not wise_files:
                 QMessageBox.warning(self, "Missing Files", "Please provide at least one Wise CSV file.")
                 return
 
+            client = self.clients[self.selected_client]
             for wise_file in wise_files:
                 output_xml = os.path.splitext(wise_file)[0] + ".xml"
                 try:
-                    wise_to_xml.process(wise_file, output_xml)
+                    wise_to_xml.process(wise_file, output_xml, client, self.clients, self.selected_client)
                     generated_files.append(output_xml)
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Failed to process {os.path.basename(wise_file)}: {str(e)}")
                     success = False
                     break
 
+        elif self.mode == "Revolut":
+            revolut_files = self.drop_label.files
+
+            if not revolut_files:
+                QMessageBox.warning(self, "Missing Files", "Please provide at least one Revolut CSV file.")
+                return
+
+            client = self.clients[self.selected_client]
+            for revolut_file in revolut_files:
+                output_xml = os.path.splitext(revolut_file)[0] + ".xml"
+                try:
+                    revolut_to_xml.process(revolut_file, output_xml, client, self.clients, self.selected_client)
+                    generated_files.append(output_xml)
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to process {os.path.basename(revolut_file)}: {str(e)}")
+                    success = False
+                    break
+
         if success:
+            self.save_clients()
             QMessageBox.information(self, "Success", f"XML files generated: {', '.join(os.path.basename(f) for f in generated_files)}.")
-            # Show dialog to select and edit XML files
             dialog = SelectXMLDialog(generated_files, self)
             dialog.exec()
 
