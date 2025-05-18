@@ -1,5 +1,5 @@
 import pandas as pd
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 import csv
 import datetime
 import pymupdf
@@ -54,15 +54,24 @@ def make_entry_list(data_list):
     return entry_list
 
 def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_client):
+    # Define namespaces
+    nsmap = {
+        None: 'http://www.bankasoc.lv/fidavista/fidavista0101.xsd',
+        'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
+    }
+
     # Get current transaction count for the selected client
     current_doc_no = client["total_transactions"]
 
-    root = ET.Element('FIDAVISTA')
+    # Create root element with namespaces
+    root = ET.Element('FIDAVISTA', nsmap=nsmap)
+
     header = ET.SubElement(root, 'Header')
     timestamp = ET.SubElement(header, 'Timestamp')
-    timestamp.text = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S").strip()
+    now = datetime.datetime.now()
+    timestamp.text = now.strftime("%Y%m%d%H%M%S") + f"{int(now.microsecond / 1000):03d}"
     from_who = ET.SubElement(header, 'From')
-    from_who.text = "PayBaltic SIA"
+    from_who.text = "Etsy"
     statement = ET.SubElement(root, 'Statement')
     period = ET.SubElement(statement, 'Period')
     startdate = ET.SubElement(period, 'StartDate')
@@ -71,16 +80,17 @@ def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_
     prepdate.text = datetime.datetime.now().strftime("%Y-%m-%d")
     bankset = ET.SubElement(statement, 'BankSet')
     name = ET.SubElement(bankset, 'Name')
-    name.text = client["Name"]
+    name.text = "Etsy"
     legalid = ET.SubElement(bankset, 'LegalId')
     address = ET.SubElement(bankset, 'Address')
     clientset = ET.SubElement(statement, 'ClientSet')
     client_name = ET.SubElement(clientset, 'Name')
-    client_name.text = client["Name"]
+    client_name.text = client["Name"].replace(" ",", ")
     legalid = ET.SubElement(clientset, 'LegalId')
+    legalid.text = client.get("LegalId", "")
     accountset = ET.SubElement(statement, 'AccountSet')
     accno = ET.SubElement(accountset, 'AccNo')
-    accno.text = client["BankAcc"]
+    accno.text = "ETSY1"
     ccystmt = ET.SubElement(accountset, 'CcyStmt')
     ccy = ET.SubElement(ccystmt, 'Ccy')
     ccy.text = "EUR"
@@ -101,9 +111,20 @@ def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_
         pdf_data = read_pdf(pdf_file) if pdf_file else None
         pdf_data_list.append(pdf_data)
 
+    # Initialize min and max dates
+    mindate = None
+    maxdate = None
+
     for dic_row in entry_list:
         current_doc_no += 1  # Increment for each transaction
         date = datetime.datetime.strptime(dic_row["Date"], "%B %d, %Y")
+
+        # Update min and max dates
+        if mindate is None or date < mindate:
+            mindate = date
+        if maxdate is None or date > maxdate:
+            maxdate = date
+
         trxset = ET.SubElement(ccystmt, "TrxSet")
         typecode = ET.SubElement(trxset, "TypeCode")
         typename = ET.SubElement(trxset, "TypeName")
@@ -161,7 +182,7 @@ def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_
         elif dic_row["Type"] == "Tax":
             pmtinfo.text = f"delete / {dic_row['Info']} / {dic_row['Title']} / Tax"
 
-        cpartyset = ET.SubElement(trxset, "CPartSet")
+        cpartyset = ET.SubElement(trxset, "CPartySet")
         accno_2 = ET.SubElement(cpartyset, "AccNo")
         accholder_2 = ET.SubElement(cpartyset, "AccHolder")
         name_2 = ET.SubElement(accholder_2, "Name")
@@ -181,45 +202,45 @@ def make_xml_list(entry_list, sales_files, pdf_files, client, clients, selected_
         ccy_2.text = "EUR"
         amt.text = accamt.text
 
+    # Set StartDate and EndDate after processing all transactions
+    if mindate is not None and maxdate is not None:
+        startdate.text = mindate.strftime("%Y-%m-%d")
+        enddate.text = maxdate.strftime("%Y-%m-%d")
+    else:
+        startdate.text = ""
+        enddate.text = ""
+
     # Update client's total_transactions
     clients[selected_client]["total_transactions"] = current_doc_no
 
     return root
-
-import xml.etree.ElementTree as ET
-
-def prepare_list(file_root):
-    xml_str = ET.tostring(file_root, encoding="unicode")
-    xml_list = xml_str.split("><")
-    new_list = []
-    i = 0
-    while i < len(xml_list):
-        current_segment = xml_list[i].strip()
-        if current_segment.startswith("TrxSet"):
-            trx_line = current_segment + "><"  # Start with the <TrxSet tag
-            i += 1
-            while i < len(xml_list) and not xml_list[i].strip().startswith("/TrxSet"):
-                trx_line += xml_list[i].strip() + "><"
-                i += 1
-            if i < len(xml_list) and xml_list[i].strip().startswith("/TrxSet"):
-                trx_line += xml_list[i].strip() + ">"  # Include the </TrxSet>
-                new_list.append(trx_line + "\n<")
-                i += 1
-        else:
-            # For non-<TrxSet> segments, append with >\n<, but ensure no duplicate ><
-            if current_segment.endswith(">"):
-                current_segment = current_segment.rstrip(">")
-            new_list.append(current_segment + ">\n<")
-            i += 1
-    # Clean up the last element if it ends with >\n<
-    if new_list and new_list[-1].strip().endswith(">\n<"):
-        new_list[-1] = new_list[-1].rstrip("\n<")
-    return new_list
-
 def prepare_xml(name, file_root):
+    """
+    Write the XML to a file with proper encoding and declaration, ensuring
+    empty tags are written as <Tag></Tag>.
+    """
+    def force_full_tags(elem):
+        """Recursively set empty elements to have empty text to force <Tag></Tag>."""
+        if not elem.text and not len(elem) and elem.tag != file_root.tag:
+            elem.text = ''
+        for child in elem:
+            force_full_tags(child)
+
+    # Process the tree to force full tags for empty elements
+    force_full_tags(file_root)
+
     with open(name, "w", encoding="utf-8") as file:
-        for things in prepare_list(file_root):
-            file.write(things)
+        # Write XML declaration
+        file.write('<?xml version="1.0" encoding="WINDOWS-1257"?>\n')
+        # Serialize the XML tree with pretty printing
+        xml_str = ET.tostring(
+            file_root,
+            encoding='unicode',
+            method='xml',
+            pretty_print=True,
+            xml_declaration=False
+        )
+        file.write(xml_str)
 
 def process(transaction_file, sales_file, pdf_file, client, clients, selected_client, output_xml):
     data_list = read_csv(transaction_file)

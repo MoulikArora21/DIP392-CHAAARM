@@ -2,6 +2,19 @@
     {
         "Name": "MARLE SIA",
         "BankAcc": "LV81HABA0551052348489",
-        "total_transactions": 478
+        "LegalId": "40203383480",
+        "total_transactions": 985
+    },
+    {
+        "Name": "SPIRIT ANIMAL SIA",
+        "BankAcc": "BE20967808077256",
+        "LegalId": "44103125796",
+        "total_transactions": 48
+    },
+    {
+        "Name": "Santa Felkere",
+        "BankAcc": "516760******9742",
+        "LegalId": "",
+        "total_transactions": 84
     }
 ]
