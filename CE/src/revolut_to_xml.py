@@ -34,10 +34,6 @@ def process(csv_file, output_xml, client, clients, selected_client):
             raise ValueError("CSV file is empty.")
 
         # Filter completed transactions for the selected client
-        df = df[df['State'] == 'COMPLETED']
-        df = df[df['Payer'] == client['Name']]
-        if df.empty:
-            raise ValueError(f"No completed transactions found for client {client['Name']}.")
 
         nsmap = {
             None: 'http://www.bankasoc.lv/fidavista/fidavista0101.xsd',

@@ -370,7 +370,7 @@ class MainWindow(QWidget):
                         c["LegalId"] = ""
                 return clients
         except (FileNotFoundError, json.JSONDecodeError, ValueError):
-            return [{"Name": "MARLE SIA", "BankAcc": "LV81HABA0551052348489", "LegalId": "", "total_transactions": 0}]
+            return [{"Name": "--NONE SELECTED--", "BankAcc": "--NONE SELECTED--", "LegalId": "", "total_transactions": 0}]
 
     def save_clients(self):
         with open("clients.json", "w") as f:
