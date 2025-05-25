@@ -1,7 +1,9 @@
 # DIP392-231ADB036
 
 SOFTWARE OVERVIEW
-This software is made to help accountants with converting and processing financial data (transaction, statement, etc)  from csv or pdf file into xml FiDAViSta format. It automates the conversion with fast processing time and an easy to use GUI for navigation.
+This software is made to help accountants with converting and processing financial data
+(transaction, statement, etc)  from csv or pdf file into xml FiDAViSta format. It automates
+the conversion with fast processing time and an easy to use GUI for navigation.
 
 SYSTEM REQUIREMENT
 
@@ -14,18 +16,10 @@ SYSTEM REQUIREMENT
 
 INSTALLATION
 Follow these detailed steps to install the software on your Windows system and set it up for use:
-
-
-Prerequisites
-
--Ensure your system runs Windows 10 or above. Check your OS version by navigating to Settings > System > About in Windows.
--Verify you have at least 100 MB of free disk space and 2 GB of RAM available.
--Install a file extraction tool such as WinRAR, 7-Zip, or Windows' built-in extraction utility if not already present.
--Ensure you have an active internet connection to download the software.
-Download
+Download zip file 
 1.Open your web browser (e.g., Google Chrome ).
 2.Navigate to the following Google Drive link to access the software:
- Google Drive Download Link - https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing
+     Google Drive Download Link - https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing
 3.Sign in to your Google account if prompted, or ensure you have access to the shared folder.
 4.Locate the software zip file in the Google Drive folder.
 5.Click the Download button. If prompted, choose to download the entire folder or the specific zip file.
