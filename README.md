@@ -4,7 +4,7 @@ A software solution designed to assist accountants in converting financial data 
 
 ## Project Resources
 
-- **Presentation Slides & Report**: Available in [CE/project_Docs](CE/project_Docs)
+- **Presentation Slides & Report**: Available in [CE/project_docs](CE/project_docs)
 - **Video Presentation**: [Watch on YouTube](https://youtu.be/WOEphRbgGpM)
 - **Installation ZIP File**: [Download from Google Drive](https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing)
 - **Documentation**: [Google Docs](https://docs.google.com/document/d/1-BgFL-_NS9lkY4evLRGx8olBv16lrraJ9kKTxE3TRkA/edit?usp=sharing)
