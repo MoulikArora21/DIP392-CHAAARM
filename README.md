@@ -4,6 +4,7 @@ SOFTWARE OVERVIEW
 This software is made to help accountants with converting and processing financial data (transaction, statement, etc)  from csv or pdf file into xml FiDAViSta format. It automates the conversion with fast processing time and an easy to use GUI for navigation.
 
 SYSTEM REQUIREMENT
+
 1.Operating System: Only works on Windows 10 and above.
 2.Input: CSV files containing bank statement data (e.g., payments, taxes, fees)
 3.Output: FiDAViSta-compliant XML files
