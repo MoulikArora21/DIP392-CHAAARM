@@ -10,6 +10,10 @@ from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QSplitter, QApplicati
 import etsy_to_xml
 import wise_to_xml
 import revolut_to_xml
+import logging  # Added for debugging
+
+# Set up basic logging to diagnose crashes
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AddClientDialog(QDialog):
     def __init__(self, parent=None):
@@ -109,6 +113,7 @@ class ClientEditorDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Edit Clients")
         self.clients = clients.copy()
+        self.parent = parent
         self.init_ui()
 
     def init_ui(self):
@@ -150,13 +155,22 @@ class ClientEditorDialog(QDialog):
             display_text = (f"{client['Name']}" if client["Name"] == "--NO CLIENT SELECTED--"
                            else f"Client {i}: {client['Name']} ({client['BankAcc']}{legal_id_display}, Transactions: {client['total_transactions']})")
             self.client_list.addItem(display_text)
+        # Ensure valid selection
+        if self.clients:
+            self.client_list.setCurrentRow(0)  # Select first item
+        else:
+            self.client_list.clearSelection()  # No selection if list is empty
+        logging.debug(f"Updated client list, items: {self.client_list.count()}, selected row: {self.client_list.currentRow()}")
 
     def update_button_states(self):
         selected = self.client_list.currentRow()
         has_selection = selected >= 0
-        is_default_client = has_selection and self.clients[selected]["Name"] == "--NO CLIENT SELECTED--"
+        is_default_client = False
+        if has_selection and selected < len(self.clients):  # Bounds check
+            is_default_client = self.clients[selected]["Name"] == "--NO CLIENT SELECTED--"
         self.edit_btn.setEnabled(has_selection and not is_default_client)
         self.delete_btn.setEnabled(has_selection and not is_default_client)
+        logging.debug(f"Button states: selected={selected}, has_selection={has_selection}, is_default_client={is_default_client}")
 
     def add_client(self):
         dialog = AddClientDialog(self)
@@ -170,7 +184,7 @@ class ClientEditorDialog(QDialog):
 
     def edit_client(self):
         selected = self.client_list.currentRow()
-        if selected >= 0 and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
+        if selected >= 0 and selected < len(self.clients) and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
             dialog = EditClientDialog(self.clients[selected], self)
             if dialog.exec():
                 client_data = dialog.get_client_data()
@@ -184,14 +198,21 @@ class ClientEditorDialog(QDialog):
 
     def edit_client_double_click(self):
         selected = self.client_list.currentRow()
-        if selected >= 0 and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
+        if selected >= 0 and selected < len(self.clients) and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
             self.edit_client()
 
     def delete_client(self):
         selected = self.client_list.currentRow()
-        if selected >= 0 and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
+        if selected >= 0 and selected < len(self.clients) and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
+            logging.debug(f"Deleting client at index {selected}, current selected_client: {self.parent.selected_client if self.parent else 'No parent'}")
+            if self.parent and hasattr(self.parent, 'selected_client'):
+                if selected == self.parent.selected_client:
+                    self.parent.selected_client = 0
+                elif selected < self.parent.selected_client:
+                    self.parent.selected_client -= 1
             self.clients.pop(selected)
             self.update_client_list()
+            logging.debug(f"After deletion, clients: {len(self.clients)}, selected_client: {self.parent.selected_client if self.parent else 'No parent'}")
         else:
             QMessageBox.warning(self, "Invalid Selection", "Cannot delete the default client.")
 
