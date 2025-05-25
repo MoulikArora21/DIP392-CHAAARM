@@ -1,135 +1,120 @@
-# DIP392-231ADB036
+# DIP392-CHAAARM
 
-SOFTWARE OVERVIEW
-This software is made to help accountants with converting and processing financial data
-(transaction, statement, etc)  from csv or pdf file into xml FiDAViSta format. It automates
-the conversion with fast processing time and an easy to use GUI for navigation.
+A software solution designed to assist accountants in converting financial data (transactions, statements, etc.) from CSV or PDF files into FiDAViSta-compliant XML format. This tool automates the conversion process with fast processing times and an intuitive graphical user interface (GUI) for easy navigation.
 
-SYSTEM REQUIREMENT
+## Project Resources
 
-1.Operating System: Only works on Windows 10 and above.
+- **Presentation Slides & Report**: Available in [CE/Project_Docs](CE/Project_Docs)
+- **Video Presentation**: [Watch on YouTube](https://youtu.be/WOEphRbgGpM)
+- **Installation ZIP File**: [Download from Google Drive](https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing)
+- **Documentation**: [Google Docs](https://docs.google.com/document/d/1-BgFL-_NS9lkY4evLRGx8olBv16lrraJ9kKTxE3TRkA/edit?usp=sharing)
 
-2.Input: CSV files containing bank statement data (e.g., payments, taxes, fees)
+## Software Overview
 
-3.Output: FiDAViSta-compliant XML files
+This software streamlines the conversion of financial data into the FiDAViSta XML format, reducing manual effort for accountants. Key features include:
 
-4.Disk space: Minimum 500 MB
+- **Fast Processing**: Quickly converts CSV and PDF files into XML.
+- **User-Friendly GUI**: Intuitive interface for selecting modes, uploading files, and managing clients.
+- **Multiple Modes**: Supports Etsy, Revolut, and Wise transaction processing.
 
-5.RAM: Minimum 2GB
+## System Requirements
 
+To run the software, ensure your system meets the following requirements:
 
-INSTALLATION
-Follow these detailed steps to install the software on your Windows system and set it up for use:
-Download zip file 
+- **Operating System**: Windows 10 or above
+- **Input Files**: CSV files (e.g., bank statements, payments, taxes, fees) and PDF files (e.g., Etsy invoices)
+- **Output**: FiDAViSta-compliant XML files
+- **Disk Space**: Minimum 500 MB
+- **RAM**: Minimum 2 GB
 
-1.Open your web browser (e.g., Google Chrome ).
+## Installation
 
-2.Navigate to the following Google Drive link to access the software:
-     Google Drive Download Link - https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing
-     
-3.Sign in to your Google account if prompted, or ensure you have access to the shared folder.
+Follow these steps to install and set up the software on your Windows system:
 
-4.Locate the software zip file in the Google Drive folder.
+1. **Download the ZIP File**:
+   - Open a web browser (e.g., Google Chrome).
+   - Navigate to the [Google Drive download link](https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing).
+   - Sign in to your Google account if prompted.
+   - Locate the software ZIP file in the folder.
+   - Click **Download** and save the file to a non-system directory (e.g., Desktop or Documents, **not** C:\).
 
-5.Click the Download button. If prompted, choose to download the entire folder or the specific zip file.
+2. **Extract the Software**:
+   - Open File Explorer and navigate to the downloaded ZIP file.
+   - Right-click the file and select **Extract All** (or use a tool like 7-Zip or WinRAR).
+   - Choose a destination folder in a non-system directory (e.g., Desktop or Documents, **not** C:\).
+   - Click **Extract** to unzip the files. Ensure all files are extracted successfully.
 
-6.Save the zip file to a location on your computer
+3. **Run the Application**:
+   - Navigate to the extracted folder.
+   - Double-click `CSVtoXMLConverter.exe` to launch the software.
 
-Extract the Software
+## How to Use the Software
 
-1.Navigate to the downloaded zip file using File Explorer.
+1. **Launch the Application**: Open `CSVtoXMLConverter.exe`.
+2. **Select a Mode**: Choose from Etsy, Revolut, or Wise via the **Mode** menu (Etsy is the default).
+3. **Upload Files**: Use the **Browse Files** button to upload required CSV or PDF files for the selected mode.
+4. **Select a Client**: Choose a client from the dropdown menu or add a new one via **Edit Clients**.
+5. **Process Files**: Click the **PROCESS** button to convert the files to FiDAViSta XML format.
+6. **Edit and Save**: After processing, click **EDIT** to modify the XML, then choose **SAVE** or **SAVE AS** to finalize.
 
-2.Right-click the zip file and select Extract All (if using Windows' built-in tool) or use a third-party tool like 7-Zip or WinRAR.
+## User Interface Overview
 
-3.Choose a destination folder for the extracted files 
+The GUI is designed for ease of use, with three main modes:
 
-4.Click Extract or follow the tool’s prompts to unzip the files. Ensure all files are extracted successfully.
+- **Etsy Mode**: Requires Transaction CSV, Orders CSV, and Invoice PDFs.
+- **Revolut Mode**: Requires Transaction CSV.
+- **Wise Mode**: Requires Transaction CSV.
 
-Install the Executable
+Each mode includes:
+- **File Upload Sections**: For Transactions, Orders, or Invoices, with **Browse Files** and **Clear Files** buttons.
+- **Client Selection**: A dropdown menu at the bottom to select or manage clients.
+- **Process Button**: Initiates the conversion process.
 
-1. Open the extracted folder and locate the setup file (e.g., DIP392_Setup.exe or similar).
-   
-2. Double-click the setup file to launch the installer. or left click it and run as administrator
+## Converting to FiDAViSta XML
 
+To generate FiDAViSta-compliant XML files:
 
-  
-HOW TO USE THE SOFTWARE
-1. Launch the application.
-2. Select the desired Mode (Etsy, Revolut, Wise).
-3. Upload required files.
-4. Select a client from the dropdown.
-5. Click the PROCESS button to begin conversion.
-   
-USER INTERFACE OVERVIEW
-The interface includes three modes to choose: Wise, Revolut and Etsy(default)
-- Transactions Statement CSV Files
-- Orders CSV Files
-- Etsy Invoice PDF FileS
-Each section has 'Browse Files' and 'Clear Files' buttons. The bottom panel allows client selection and has a PROCESS button to start conversion.
+1. Select the desired mode from the **Mode** menu.
+2. Upload the required files for the chosen mode:
+   - **Etsy**: Transaction CSV, Orders CSV, and Invoice PDFs.
+   - **Revolut**: Transaction CSV.
+   - **Wise**: Transaction CSV.
+3. Select a client profile from the dropdown.
+4. Click **PROCESS** to generate the XML file.
+5. Use the **EDIT** button to review or modify the XML, then **SAVE** or **SAVE AS** to store the output.
 
-6. CONVERT TO FIDAVISTA XML
-1. Choose the conversion mode via the Mode menu.
-2. Upload the necessary files for the selected mode.
-3. Select a client profile.
-4. Click PROCESS to generate the XML output.
-5. Click EDIT to make any edit and choose SAVE OR SAVE AS to finalize.
-   
-7. CLIENT MANAGEMENT
-Click 'Edit Clients' to:
-- Add new client profiles
-- Edit existing client information
-- Delete outdated profiles
-  
-8. SUPPORTED MODES
-Etsy Mode: Requires Transaction CSV, Orders CSV, and Invoice PDFs
-Revolut Mode: Requires Transaction CSV
-Wise Mode: Requires Transaction CSV
+## Client Management
 
+Manage client profiles by clicking **Edit Clients**:
+- **Add**: Create new client profiles with name, bank account, legal ID, and transaction count.
+- **Edit**: Update existing client information.
+- **Delete**: Remove outdated or unnecessary profiles.
 
+**Note**: The default client ("--NO CLIENT SELECTED--") cannot be edited or deleted.
 
+## Supported Modes
 
+| Mode      | Required Files                     | Description                              |
+|-----------|------------------------------------|------------------------------------------|
+| **Etsy**  | Transaction CSV, Orders CSV, Invoice PDFs | Processes Etsy transaction and order data with invoices. |
+| **Revolut** | Transaction CSV                  | Converts Revolut bank statement data.     |
+| **Wise**  | Transaction CSV                    | Converts Wise transaction data.           |
 
+## Troubleshooting
 
+- **Administrator Permissions**: If prompted for admin rights, ensure the software is installed in a non-protected directory (e.g., Desktop).
+- **File Not Found**: Verify that all required CSV/PDF files are uploaded for the selected mode.
+- **Crashes**: Check the console logs (run with console enabled) and report issues with steps to reproduce.
 
+## Contributions
 
+This project was developed by a dedicated team with the following contributions:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Presentation Slides - 
-Video Demo - 
-Document - 
-
-
-
-
-
-
-
-
-
-
-
-https://docs.google.com/document/d/1-BgFL-_NS9lkY4evLRGx8olBv16lrraJ9kKTxE3TRkA/edit?usp=sharing
-
-
-
+- **Cong Minh Tran**: Project Manager
+- **Hemant**: Logic Developer
+- **Anas Mehmood**: Documentation
+- **Akshat Dhingra**: Backend Developer
+- **Aman Pathak**: Frontend Developer
+- **Rakesh Gudimetla**: Testing
+- **Moulik Arora**: Backend Developer
 
