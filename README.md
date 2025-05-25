@@ -22,11 +22,16 @@ INSTALLATION
 Follow these detailed steps to install the software on your Windows system and set it up for use:
 Download zip file 
 1.Open your web browser (e.g., Google Chrome ).
+
 2.Navigate to the following Google Drive link to access the software:
      Google Drive Download Link - https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing
+     
 3.Sign in to your Google account if prompted, or ensure you have access to the shared folder.
+
 4.Locate the software zip file in the Google Drive folder.
+
 5.Click the Download button. If prompted, choose to download the entire folder or the specific zip file.
+
 6.Save the zip file to a location on your computer
 
 Extract the Software
