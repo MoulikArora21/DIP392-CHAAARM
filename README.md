@@ -13,7 +13,7 @@ SYSTEM REQUIREMENT
 
 3.Output: FiDAViSta-compliant XML files
 
-4.Disk space: Minimum 100 MB
+4.Disk space: Minimum 500 MB
 
 5.RAM: Minimum 2GB
 
