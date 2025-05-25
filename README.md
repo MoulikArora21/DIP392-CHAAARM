@@ -8,9 +8,13 @@ the conversion with fast processing time and an easy to use GUI for navigation.
 SYSTEM REQUIREMENT
 
 1.Operating System: Only works on Windows 10 and above.
+
 2.Input: CSV files containing bank statement data (e.g., payments, taxes, fees)
+
 3.Output: FiDAViSta-compliant XML files
+
 4.Disk space: Minimum 100 MB
+
 5.RAM: Minimum 2GB
 
 
@@ -33,7 +37,8 @@ Extract the Software
 
 Install the Executable
 1. Open the extracted folder and locate the setup file (e.g., DIP392_Setup.exe or similar).
-2. Double-click the setup file to launch the installer. or left click it and run as administrator 
+2. Double-click the setup file to launch the installer. or left click it and run as administrator
+
 
   
 HOW TO USE THE SOFTWARE
