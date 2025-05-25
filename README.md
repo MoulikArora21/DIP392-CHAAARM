@@ -36,13 +36,19 @@ Download zip file
 6.Save the zip file to a location on your computer
 
 Extract the Software
+
 1.Navigate to the downloaded zip file using File Explorer.
+
 2.Right-click the zip file and select Extract All (if using Windows' built-in tool) or use a third-party tool like 7-Zip or WinRAR.
+
 3.Choose a destination folder for the extracted files 
+
 4.Click Extract or follow the tool’s prompts to unzip the files. Ensure all files are extracted successfully.
 
 Install the Executable
+
 1. Open the extracted folder and locate the setup file (e.g., DIP392_Setup.exe or similar).
+   
 2. Double-click the setup file to launch the installer. or left click it and run as administrator
 
 
