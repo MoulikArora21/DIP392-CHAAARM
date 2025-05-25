@@ -10,10 +10,36 @@ Output: FiDAViSta-compliant XML files
 Disk space: Minimum 100 MB
 RAM: Minimum 2GB
 
+
 INSTALLATION
-	Executable Version:
-- Download the setup file.
-- Run the installer and follow on-screen instructions.
+Follow these detailed steps to install the software on your Windows system and set it up for use:
+
+
+Prerequisites
+
+-Ensure your system runs Windows 10 or above. Check your OS version by navigating to Settings > System > About in Windows.
+-Verify you have at least 100 MB of free disk space and 2 GB of RAM available.
+-Install a file extraction tool such as WinRAR, 7-Zip, or Windows' built-in extraction utility if not already present.
+-Ensure you have an active internet connection to download the software.
+Download
+1.Open your web browser (e.g., Google Chrome ).
+2.Navigate to the following Google Drive link to access the software:
+ Google Drive Download Link - https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing
+3.Sign in to your Google account if prompted, or ensure you have access to the shared folder.
+4.Locate the software zip file in the Google Drive folder.
+5.Click the Download button. If prompted, choose to download the entire folder or the specific zip file.
+6.Save the zip file to a location on your computer
+
+Extract the Software
+1.Navigate to the downloaded zip file using File Explorer.
+2.Right-click the zip file and select Extract All (if using Windows' built-in tool) or use a third-party tool like 7-Zip or WinRAR.
+3.Choose a destination folder for the extracted files 
+4.Click Extract or follow the tool’s prompts to unzip the files. Ensure all files are extracted successfully.
+
+Install the Executable
+1. Open the extracted folder and locate the setup file (e.g., DIP392_Setup.exe or similar).
+2. Double-click the setup file to launch the installer. or left click it and run as administrator 
+
   
 HOW TO USE THE SOFTWARE
 1. Launch the application.
@@ -50,13 +76,7 @@ Wise Mode: Requires Transaction CSV
 
 
 
-How to install our software?
-https://drive.google.com/drive/folders/1Gr9aJNLn6cMid96FxTSMfDdl657A-bNd?usp=sharing
 
-
-
-extract
-exe
 
 
 
