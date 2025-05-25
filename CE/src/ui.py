@@ -147,14 +147,16 @@ class ClientEditorDialog(QDialog):
         for i, client in enumerate(self.clients):
             legal_id = client.get("LegalId", "")
             legal_id_display = f", LegalId: {legal_id}" if legal_id else ""
-            self.client_list.addItem(
-                f"Client {i+1}: {client['Name']} ({client['BankAcc']}{legal_id_display}, Transactions: {client['total_transactions']})"
-            )
+            display_text = (f"{client['Name']}" if client["Name"] == "--NO CLIENT SELECTED--"
+                           else f"Client {i}: {client['Name']} ({client['BankAcc']}{legal_id_display}, Transactions: {client['total_transactions']})")
+            self.client_list.addItem(display_text)
 
     def update_button_states(self):
-        has_selection = self.client_list.currentRow() >= 0
-        self.edit_btn.setEnabled(has_selection)
-        self.delete_btn.setEnabled(has_selection)
+        selected = self.client_list.currentRow()
+        has_selection = selected >= 0
+        is_default_client = has_selection and self.clients[selected]["Name"] == "--NO CLIENT SELECTED--"
+        self.edit_btn.setEnabled(has_selection and not is_default_client)
+        self.delete_btn.setEnabled(has_selection and not is_default_client)
 
     def add_client(self):
         dialog = AddClientDialog(self)
@@ -168,7 +170,7 @@ class ClientEditorDialog(QDialog):
 
     def edit_client(self):
         selected = self.client_list.currentRow()
-        if selected >= 0:
+        if selected >= 0 and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
             dialog = EditClientDialog(self.clients[selected], self)
             if dialog.exec():
                 client_data = dialog.get_client_data()
@@ -178,20 +180,20 @@ class ClientEditorDialog(QDialog):
                 else:
                     QMessageBox.warning(self, "Invalid Input", "Name and Bank Account cannot be empty.")
         else:
-            QMessageBox.warning(self, "No Selection", "Please select a client to edit.")
+            QMessageBox.warning(self, "Invalid Selection", "Cannot edit the default client.")
 
     def edit_client_double_click(self):
         selected = self.client_list.currentRow()
-        if selected >= 0:
+        if selected >= 0 and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
             self.edit_client()
 
     def delete_client(self):
         selected = self.client_list.currentRow()
-        if selected >= 0:
+        if selected >= 0 and self.clients[selected]["Name"] != "--NO CLIENT SELECTED--":
             self.clients.pop(selected)
             self.update_client_list()
         else:
-            QMessageBox.warning(self, "No Selection", "Please select a client to delete.")
+            QMessageBox.warning(self, "Invalid Selection", "Cannot delete the default client.")
 
     def accept(self):
         super().accept()
@@ -356,6 +358,7 @@ class MainWindow(QWidget):
         self.EtsyUI()
 
     def load_clients(self):
+        default_client = [{"Name": "--NO CLIENT SELECTED--", "BankAcc": "--NONE SELECTED--", "LegalId": "", "total_transactions": 0}]
         try:
             with open("clients.json", "r") as f:
                 clients = json.load(f)
@@ -368,13 +371,18 @@ class MainWindow(QWidget):
                         c["total_transactions"] = 0
                     if "LegalId" not in c:
                         c["LegalId"] = ""
+                # Ensure default client is first
+                if not any(c["Name"] == "--NO CLIENT SELECTED--" for c in clients):
+                    clients.insert(0, default_client[0])
                 return clients
         except (FileNotFoundError, json.JSONDecodeError, ValueError):
-            return [{"Name": "--NONE SELECTED--", "BankAcc": "--NONE SELECTED--", "LegalId": "", "total_transactions": 0}]
+            return default_client
 
     def save_clients(self):
+        # Save all clients except the default if it's the only one
+        clients_to_save = [c for c in self.clients if c["Name"] != "--NO CLIENT SELECTED--"]
         with open("clients.json", "w") as f:
-            json.dump(self.clients, f, indent=4)
+            json.dump(clients_to_save, f, indent=4)
 
     def set_etsy_mode(self):
         self.mode = "Etsy"
@@ -527,18 +535,19 @@ class MainWindow(QWidget):
         self.combo.blockSignals(True)
         self.combo.clear()
         for i, client in enumerate(self.clients):
-            self.combo.addItem(f"Client {i+1}: {client['Name']}")
-        if self.clients:
-            self.combo.setCurrentIndex(self.selected_client)
-        else:
-            self.selected_client = 0
-            self.combo.setCurrentIndex(0)
+            display_text = (f"{client['Name']}" if client["Name"] == "--NO CLIENT SELECTED--"
+                           else f"Client {i}: {client['Name']}")
+            self.combo.addItem(display_text)
+        self.combo.setCurrentIndex(self.selected_client)
         self.combo.blockSignals(False)
 
     def edit_clients(self):
         dialog = ClientEditorDialog(self.clients, self)
         if dialog.exec():
             self.clients = dialog.get_clients()
+            # Ensure default client is always present
+            if not any(c["Name"] == "--NO CLIENT SELECTED--" for c in self.clients):
+                self.clients.insert(0, {"Name": "--NO CLIENT SELECTED--", "BankAcc": "--NONE SELECTED--", "LegalId": "", "total_transactions": 0})
             self.save_clients()
             self.selected_client = min(self.selected_client, len(self.clients) - 1 if self.clients else 0)
             self.update_combo()
@@ -560,6 +569,10 @@ class MainWindow(QWidget):
     def process_files(self):
         generated_files = []
         success = True
+
+        if self.clients[self.selected_client]["Name"] == "--NO CLIENT SELECTED--":
+            QMessageBox.warning(self, "No Client Selected", "Please select a valid client before processing files.")
+            return
 
         if self.mode == "Etsy":
             transaction_files = self.drop_label.files
